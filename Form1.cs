@@ -1,4 +1,6 @@
+using Khutbah_Frontend.Classes;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace Khutbah_Frontend
 {
@@ -15,23 +17,37 @@ namespace Khutbah_Frontend
             {
                 InitialDirectory = @"D:\Downloads",
                 Title = "Browse PDF Files",
-                
                 CheckFileExists = true,
                 CheckPathExists = true,
-
                 DefaultExt = "pdf",
                 Filter = "PDF files (*.pdf)|*.pdf|All files (*.*)|*.*",
-                FilterIndex = 2,
-                RestoreDirectory = true,
-                    ReadOnlyChecked = true,
-                    ShowReadOnly = true
+                FilterIndex = 1,
+                RestoreDirectory = true
             };
 
-            if (fileexplorer.ShowDialog() == DialogResult.OK)
+            if (fileexplorer.ShowDialog() != DialogResult.OK)
+                return;
+
+            string selectedFilePath = fileexplorer.FileName;
+
+            try
             {
-                string selectedFilePath = fileexplorer.FileName;
                 PDF2TXT pdf2txt = new PDF2TXT();
-                await pdf2txt.Convert(selectedFilePath);
+
+                string arabic = await pdf2txt.Convert(selectedFilePath);
+                string english = await Translation.Translator(arabic);
+
+                string dir = Path.GetDirectoryName(selectedFilePath);
+                string name = Path.GetFileNameWithoutExtension(selectedFilePath);
+                string englishPath = Path.Combine(dir, name + "_en.txt");
+
+                File.WriteAllText(englishPath, english, new UTF8Encoding(true));
+
+                MessageBox.Show($"Done. Saved to:\n{englishPath}", "Translation complete");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Something went wrong");
             }
         }
     }
