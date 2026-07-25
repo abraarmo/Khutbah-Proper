@@ -1,15 +1,17 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using System;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
+using System.Windows.Forms;
 
 namespace Khutbah_Frontend.Classes
 {
     public class Translation
     {
-        public static async Task<string> Translator(string allText)
+        static public async Task<string> TranslateTextRequest(string inputText, string selectedFilePath)
         {
             var config = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
@@ -18,36 +20,51 @@ namespace Khutbah_Frontend.Classes
 
             string endpoint = config["AzureTranslationService:Endpoint"];
             string apiKey = config["AzureTranslationService:ApiKey"];
-            string region = config["AzureTranslationService:Region"];
 
-            string route = "translate?api-version=3.0&from=ar&to=en";
+            
+            string route = config["AzureTranslationService:Route"];
 
-            object[] body = new object[] { new { Text = allText } };
-            string requestBody = JsonConvert.SerializeObject(body);
+            string systemPrompt =
+                "You are an expert translator of classical and Qur'anic Arabic into English. " +
+                "The input is a Friday khutbah (sermon) with full diacritics. Translate it into clear, " +
+                "faithful English. Preserve Islamic terminology, and render Qur'anic verses and hadith " +
+                "in a dignified register appropriate to scripture. Keep the structure of the original. " +
+                "Output only the English translation, with no commentary.";
+
+            var body = new
+            {
+                messages = new[]
+                {
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user",   content = inputText }
+                }
+            };
+            var requestBody = JsonConvert.SerializeObject(body);
 
             using (var client = new HttpClient())
+            using (var request = new HttpRequestMessage())
             {
-                client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", apiKey);
-                client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Region", region);
-                client.BaseAddress = new Uri(endpoint);
+                request.Method = HttpMethod.Post;
+                request.RequestUri = new Uri(new Uri(endpoint), route);
+                request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+                request.Headers.Add("api-key", apiKey);
 
-                using (var request = new HttpRequestMessage())
-                {
-                    request.Method = HttpMethod.Post;
-                    request.RequestUri = new Uri(client.BaseAddress, route);
-                    request.Content = new StringContent(
-                        requestBody, Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await client.SendAsync(request).ConfigureAwait(false);
+                string result = await response.Content.ReadAsStringAsync();
 
-                    HttpResponseMessage response = await client.SendAsync(request);
-                    string result = await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
+                    throw new Exception($"OpenAI returned {(int)response.StatusCode}: {result}");
 
-                    if (!response.IsSuccessStatusCode)
-                        throw new Exception(
-                            $"Translator returned {(int)response.StatusCode}: {result}");
+                var parsed = JsonConvert.DeserializeObject<Khutbah_Frontend.DTO.OpenAiResponse>(result);
+                string translatedText = parsed.Choices[0].Message.Content;
 
-                    dynamic jsonResponse = JsonConvert.DeserializeObject(result);
-                    return (string)jsonResponse[0].translations[0].text;
-                }
+                string dir = Path.GetDirectoryName(selectedFilePath);
+                string name = Path.GetFileNameWithoutExtension(selectedFilePath);
+                string englishPath = Path.Combine(dir, name + "_en.txt");
+
+                File.WriteAllText(englishPath, translatedText, new UTF8Encoding(true));
+
+                return translatedText;
             }
         }
     }

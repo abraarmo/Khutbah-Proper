@@ -35,11 +35,11 @@ namespace Khutbah_Frontend
                 PDF2TXT pdf2txt = new PDF2TXT();
 
                 string arabic = await pdf2txt.Convert(selectedFilePath);
-                string english = await Translation.Translator(arabic);
+                string english = await Translation.TranslateTextRequest(arabic, selectedFilePath);
 
                 string dir = Path.GetDirectoryName(selectedFilePath);
                 string name = Path.GetFileNameWithoutExtension(selectedFilePath);
-                string englishPath = Path.Combine(dir, name + "_en.txt");
+                string englishPath = Path.Combine(dir, name + "_Ten.txt");
 
                 File.WriteAllText(englishPath, english, new UTF8Encoding(true));
 
