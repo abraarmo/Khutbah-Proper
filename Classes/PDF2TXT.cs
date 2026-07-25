@@ -34,7 +34,7 @@ namespace Khutbah_Frontend
 
             string allText = operation.Value.Content;
 
-            // Debug only: dump the raw Arabic so extraction issues can be told
+            // Debug only: dump the raw Arabic in txt file so extraction issues can be told
             // apart from translation issues.
             if (config.GetValue<bool>("Debug:SaveExtractedText"))
             {
