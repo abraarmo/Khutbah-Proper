@@ -60,6 +60,7 @@ namespace Khutbah_Frontend.Classes
             using (var client = new HttpClient())
             using (var request = new HttpRequestMessage())
             {
+                client.Timeout = TimeSpan.FromMinutes(5);
                 request.Method = HttpMethod.Post;
                 request.RequestUri = new Uri(new Uri(endpoint), route);
                 request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
