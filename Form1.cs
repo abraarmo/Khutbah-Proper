@@ -1,4 +1,5 @@
 using Khutbah_Frontend.Classes;
+using Khutbah_Frontend.DTO;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
@@ -35,15 +36,17 @@ namespace Khutbah_Frontend
                 PDF2TXT pdf2txt = new PDF2TXT();
 
                 string arabic = await pdf2txt.Convert(selectedFilePath);
-                string english = await Translation.TranslateTextRequest(arabic, selectedFilePath);
+                List<SentencePair> pairs = await Translation.TranslateTextRequest(arabic);
 
-                string dir = Path.GetDirectoryName(selectedFilePath);
+                string dir = Path.GetDirectoryName(selectedFilePath)!;
                 string name = Path.GetFileNameWithoutExtension(selectedFilePath);
                 string englishPath = Path.Combine(dir, name + "_Ten.txt");
 
-                File.WriteAllText(englishPath, english, new UTF8Encoding(true));
+                //File.WriteAllText(englishPath, english, new UTF8Encoding(true));
 
                 MessageBox.Show($"Done. Saved to:\n{englishPath}", "Translation complete");
+
+                
             }
             catch (Exception ex)
             {
