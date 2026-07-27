@@ -16,4 +16,10 @@ namespace Khutbah_Frontend.DTO
     {
         public string Content { get; set; }
     }
+
+    public class SentencePair
+    {
+        public string AR{ get; set; }
+        public string EN{ get; set; }
+    }
 }

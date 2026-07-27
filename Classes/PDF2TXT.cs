@@ -10,13 +10,15 @@ namespace Khutbah_Frontend
 {
     public class PDF2TXT
     {
+        
         public async Task<string> Convert(string selectedFilePath)
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             var config = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false)
                 .Build();
-
+            System.Diagnostics.Debug.WriteLine($"Config build {sw.ElapsedMilliseconds} ms");
             string endpoint = config["AzureDocumentIntelligence:Endpoint"];
             string apiKey = config["AzureDocumentIntelligence:ApiKey"];
 
@@ -34,11 +36,12 @@ namespace Khutbah_Frontend
 
             string allText = operation.Value.Content;
 
+            System.Diagnostics.Debug.WriteLine($"Generating the text: {sw.ElapsedMilliseconds} ms");
             // Debug only: dump the raw Arabic in txt file so extraction issues can be told
             // apart from translation issues.
             if (config.GetValue<bool>("Debug:SaveExtractedText"))
             {
-                string dir = Path.GetDirectoryName(selectedFilePath);
+                string dir = Path.GetDirectoryName(selectedFilePath)!;
                 string name = Path.GetFileNameWithoutExtension(selectedFilePath);
                 string arabicPath = Path.Combine(dir, name + "_ar.txt");
 

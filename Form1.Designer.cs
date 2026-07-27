@@ -34,9 +34,10 @@
             // btn_browse
             // 
             btn_browse.Font = new Font("Segoe UI", 30F);
-            btn_browse.Location = new Point(155, 135);
+            btn_browse.Location = new Point(136, 101);
+            btn_browse.Margin = new Padding(3, 2, 3, 2);
             btn_browse.Name = "btn_browse";
-            btn_browse.Size = new Size(429, 155);
+            btn_browse.Size = new Size(375, 116);
             btn_browse.TabIndex = 0;
             btn_browse.Text = "Browse";
             btn_browse.UseVisualStyleBackColor = true;
@@ -44,10 +45,11 @@
             // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(8F, 20F);
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(700, 338);
             Controls.Add(btn_browse);
+            Margin = new Padding(3, 2, 3, 2);
             Name = "Form1";
             Text = "Form1";
             ResumeLayout(false);
