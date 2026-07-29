@@ -42,7 +42,7 @@ namespace Khutbah_Frontend.Classes
                     - Every Arabic sentence must have exactly one matching English translation.
                     - Preserve the Arabic exactly as given, including diacritics. Do not correct or normalise it.
                     - Preserve Islamic terminology (taqwa, shirk, dua) rather than flattening it.
-                    - Render Qur'anic verses and hadith in a dignified register appropriate to scripture. If not possible, dont translate and keep the original.
+                    - Render Qur'anic verses and hadith in a dignified register appropriate to scripture.
                     - Ignore page numbers, headers, and footers. Do not include them.
                     - Output no commentary, no markdown, no code fences — only the raw JSON array.
                 """;
@@ -52,8 +52,9 @@ namespace Khutbah_Frontend.Classes
                 messages = new[]
                 {
                     new { role = "system", content = systemPrompt },
-                    new { role = "user",   content = inputText }
-                }
+                    new { role = "user", content = inputText }
+                },
+                reasoning_effort = "low"
             };
             var requestBody = JsonConvert.SerializeObject(body);
 

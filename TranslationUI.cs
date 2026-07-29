@@ -11,11 +11,10 @@ namespace Khutbah_Frontend
 {
     public partial class TranslationUI : Form
     {
-        public TranslationUI(List<SentencePair> sentencePairs)
+        public TranslationUI(List<SentencePair> translatedText)
         {
             InitializeComponent();
-            string richTextContent = string.Join("\n", sentencePairs.Select(p => p.EN));
-            richTextBox1.Text = richTextContent;
+            richTextBox1.Text = string.Join("\n", translatedText.Select(s => s.EN));
         }
 
     }

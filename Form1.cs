@@ -37,26 +37,7 @@ namespace Khutbah_Frontend
                 PDF2TXT pdf2txt = new PDF2TXT();
 
                 string arabic = await pdf2txt.Convert(selectedFilePath);
-                string[] lines = arabic.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-                var chunks = lines.Chunk(5);
-                List<SentencePair> pairs;
-
-                
-                List<Task<List<SentencePair>>> tasks = new List<Task<List<SentencePair>>>();
-                // marker found — translate both halves in parallel
-                foreach (string[] group in chunks)
-                {
-                    string chunkText = string.Join("\n", group);
-                    tasks.Add(Translation.TranslateTextRequest(chunkText));
-                }
-                await Task.WhenAll(tasks);
-
-                pairs = new List<SentencePair>();
-                foreach (var task in tasks)
-                {
-                    pairs.AddRange(task.Result);
-                }
-                
+                List<SentencePair> pairs = await Translation.TranslateTextRequest(arabic);
 
                 new TranslationUI(pairs).Show();
 
@@ -68,7 +49,7 @@ namespace Khutbah_Frontend
 
                 //MessageBox.Show($"Done. Saved to:\n{englishPath}", "Translation complete");
 
-                
+
             }
             catch (Exception ex)
             {
