@@ -2,12 +2,22 @@
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Khutbah_Frontend.Classes
 {
     public class Translation
     {
-        static public async Task<List<SentencePair>> TranslateTextRequest(string inputText)
+        public static List<string> SplitintoSentences(string text)
+        {
+            // Split the text into sentences based on punctuation marks
+            var sentences = text.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(s => s.Trim())
+                                .Where(s => !string.IsNullOrWhiteSpace(s) && !Regex.IsMatch(s, "[a-zA-Z]"))
+                                .ToList();
+            return sentences;
+        }
+        public static async Task<List<SentencePair>> TranslateTextRequest(string inputText)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var config = new ConfigurationBuilder()

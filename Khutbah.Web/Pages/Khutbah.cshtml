@@ -1,0 +1,229 @@
+@page
+@model KhutbahModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Khutbah</title>
+    <style>
+            :root {
+                --bg: #0f1115;
+                --card: #171a21;
+                --text-dim: #4a5160;
+                --text-bright: #f4f6fa;
+                --accent: #d4af37;
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            html, body {
+                background: var(--bg);
+                color: var(--text-bright);
+                font-family: "Segoe UI", Roboto, -apple-system, sans-serif;
+                height: 100%;
+            }
+
+            .stage {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 4vh 5vw 20vh;
+            }
+
+            .sentence {
+                font-size: clamp(1.6rem, 3.4vw, 3rem);
+                line-height: 1.5;
+                font-weight: 400;
+                padding: 0.7em 0;
+                color: var(--text-dim);
+                transition: color 0.3s ease, opacity 0.3s ease;
+                opacity: 0.4;
+            }
+
+                .sentence.current {
+                    color: var(--text-bright);
+                    opacity: 1;
+                }
+
+                    .sentence.current::before {
+                        content: "";
+                        display: inline-block;
+                        width: 4px;
+                        height: 1em;
+                        background: var(--accent);
+                        margin-right: 0.5em;
+                        vertical-align: -0.12em;
+                        border-radius: 2px;
+                    }
+
+            .controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                display: flex;
+                justify-content: center;
+                gap: 1rem;
+                padding: 1.2rem;
+                background: linear-gradient(to top, var(--bg) 60%, transparent);
+            }
+
+                .controls button {
+                    font-size: 1.1rem;
+                    padding: 0.7em 1.6em;
+                    background: var(--card);
+                    color: var(--text-bright);
+                    border: 1px solid #2a2f3a;
+                    border-radius: 8px;
+                    cursor: pointer;
+                }
+
+                    .controls button:hover {
+                        border-color: var(--accent);
+                    }
+    </style>
+</head>
+<body>
+    <div class="stage" id="stage">
+        @for (int i = 0; i < Model.Sentences.Count; i++)
+        {
+            <p class="sentence @(i == 0 ? "current" : "")" data-index="@i">@Model.Sentences[i]</p>
+        }
+    </div>
+
+    <div class="controls">
+        <button id="micBtn" type="button">Start Listening</button>
+        <button id="prevBtn" type="button">Previous</button>
+        <button id="nextBtn" type="button">Next</button>
+    </div>
+
+    <script>
+            const arabicLinesRaw = [
+                @foreach (var pair in Model.Pairs)
+                {
+                        @Html.Raw(Json.Serialize(pair.AR))
+                        <text>,</text>
+                }
+            ];
+    </script>
+
+    <script>
+            // ---- NORMALIZATION ----
+            function normalizeArabic(text) {
+                return text
+                    .replace(/[\u064B-\u0652\u0670]/g, '')
+                    .replace(/[\u0622\u0623\u0625]/g, '\u0627')
+                    .replace(/\u0629/g, '\u0647')
+                    .replace(/\u0649/g, '\u064A')
+                    .replace(/\u0640/g, '')
+                    .replace(/[^\u0621-\u064A\s]/g, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
+            const arabicLines = arabicLinesRaw.map(normalizeArabic);
+
+            // ---- DISPLAY HELPER ----
+            const sentences = Array.from(document.querySelectorAll('.sentence'));
+            let currentIndex = 0;
+
+            function moveTo(index) {
+                if (index < 0 || index >= sentences.length) return;
+                sentences[currentIndex].classList.remove('current');
+                currentIndex = index;
+                const el = sentences[currentIndex];
+                el.classList.add('current');
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            // ---- SPEECH MATCHING ----
+            function checkAdvance(heardText) {
+                const heardWords = heardText.split(' ');
+                const windowStart = currentIndex;
+                const windowEnd = Math.min(currentIndex + 2, arabicLines.length - 1);
+
+                let bestScore = 0;
+                let bestIndex = -1;
+
+                for (let i = windowStart; i <= windowEnd; i++) {
+                    const lineWords = arabicLines[i].split(' ');
+                    if (lineWords.length === 0) continue;
+
+                    let matched = 0;
+                    for (const word of lineWords) {
+                        if (heardWords.includes(word)) {
+                            matched++;
+                        }
+                    }
+
+                    const score = matched / lineWords.length;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestIndex = i;
+                    }
+                }
+
+                // Threshold - tune this (0.4 = eager, 0.8 = strict). Only moves forward.
+                if (bestScore >= 0.6 && bestIndex > currentIndex) {
+                    moveTo(bestIndex);
+                }
+            }
+
+            // ---- BUTTON WIRING ----
+            document.getElementById('nextBtn').addEventListener('click', () => moveTo(currentIndex + 1));
+            document.getElementById('prevBtn').addEventListener('click', () => moveTo(currentIndex - 1));
+
+            // ---- SPEECH WIRING ----
+            const micBtn = document.getElementById('micBtn');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                console.log("This browser doesn't support speech recognition. Use Chrome.");
+                micBtn.textContent = 'Speech not supported';
+                micBtn.disabled = true;
+            } else {
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'ar-SA';
+                recognition.continuous = true;
+                recognition.interimResults = true;
+
+                let isListening = false;
+
+                recognition.onresult = (event) => {
+                    let heard = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        heard += event.results[i][0].transcript + ' ';
+                    }
+                    checkAdvance(normalizeArabic(heard));
+                };
+
+                recognition.onerror = (e) => { console.log('Speech error:', e.error); };
+
+                micBtn.addEventListener('click', () => {
+                    if (isListening) {
+                        recognition.stop();
+                    } else {
+                        recognition.start();
+                        micBtn.textContent = 'Stop Listening';
+                        micBtn.style.borderColor = '#d4af37';
+                        isListening = true;
+                    }
+                });
+
+                // Fires when recognition stops (manually or on its own).
+                recognition.onend = () => {
+                    micBtn.textContent = 'Start Listening';
+                    micBtn.style.borderColor = '#2a2f3a';
+                    isListening = false;
+                };
+            }
+    </script>
+</body>
+</html>
