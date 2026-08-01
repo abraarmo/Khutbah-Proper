@@ -2,12 +2,29 @@
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Khutbah.Web.Services.Classes
 {
     public class Translation
     {
-        static public async Task<List<SentencePair>> TranslateTextRequest(string inputText)
+        public static List<string> SplitIntoSentences(string text)
+        {
+            // STAGE 1: strip junk lines (headers, page numbers) first
+            var cleanedLines = text
+                .Split('\n')
+                .Where(line => !Regex.IsMatch(line, "[a-zA-Z]"))   // drop lines with Latin letters
+                .ToList();
+            string cleaned = string.Join(" ", cleanedLines);
+
+            // STAGE 2: now split the cleaned Arabic on sentence boundaries
+            return cleaned
+                .Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .ToList();
+        }
+        public static async Task<List<SentencePair>> TranslateTextRequest(string inputText)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var config = new ConfigurationBuilder()
