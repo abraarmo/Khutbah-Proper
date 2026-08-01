@@ -1,9 +1,9 @@
-﻿using Khutbah_Frontend.DTO;
+﻿using Khutbah.Web.Services.DTO;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.Text;
 
-namespace Khutbah_Frontend.Classes
+namespace Khutbah.Web.Services.Classes
 {
     public class Translation
     {
@@ -69,7 +69,7 @@ namespace Khutbah_Frontend.Classes
                     throw new Exception($"OpenAI returned {(int)response.StatusCode}: {result}");
                 System.Diagnostics.Debug.WriteLine($"OpenAI has just responded: {sw.ElapsedMilliseconds} ms");
 
-                var parsed = JsonConvert.DeserializeObject<Khutbah_Frontend.DTO.OpenAiResponse>(result)!;
+                var parsed = JsonConvert.DeserializeObject<Khutbah.Web.Services.DTO.OpenAiResponse>(result)!;
                 string translatedText = parsed.Choices[0].Message.Content;
                 List<SentencePair> sentencePairs = JsonConvert.DeserializeObject<List<SentencePair>>(translatedText)!;
 

@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Khutbah Frontend.csproj" />
+  <Project Path="Khutbah.Web/Khutbah.Web.csproj" Id="2256a6b6-523f-44b0-9e40-93cc6f3feb7c" />
 </Solution>

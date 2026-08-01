@@ -1,8 +1,5 @@
 using Khutbah_Frontend.Classes;
 using Khutbah_Frontend.DTO;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ProgressBar;
 
 namespace Khutbah_Frontend
 {
