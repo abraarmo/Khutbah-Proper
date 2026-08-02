@@ -1,16 +1,13 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-using Azure;
+﻿using Azure;
 using Azure.AI.DocumentIntelligence;
-using Microsoft.Extensions.Configuration;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Khutbah.Web.Services
 {
     public class PDF2TXT
     {
-        
+
         public async Task<string> Convert(string selectedFilePath)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -35,6 +32,9 @@ namespace Khutbah.Web.Services
                 data);
 
             string allText = operation.Value.Content;
+            allText = Regex.Replace(allText, "[\u064B-\u0652\u0670]", "");
+            allText = string.Join("\n", allText.Split('\n') .Where(line => !Regex.IsMatch(line, "[a-zA-Z]")));
+            allText = allText.Replace("الحمد لله", ".الحمد لله");
 
             System.Diagnostics.Debug.WriteLine($"Generating the text: {sw.ElapsedMilliseconds} ms");
             // Debug only: dump the raw Arabic in txt file so extraction issues can be told

@@ -169,6 +169,7 @@
                         bestIndex = i;
                     }
                 }
+                console.log('heard:', heardText, '| best:', bestIndex, 'score:', bestScore, '| current:', currentIndex);
 
                 // Threshold - tune this (0.4 = eager, 0.8 = strict). Only moves forward.
                 if (bestScore >= 0.6 && bestIndex > currentIndex) {
@@ -192,16 +193,15 @@
                 const recognition = new SpeechRecognition();
                 recognition.lang = 'ar-SA';
                 recognition.continuous = true;
-                recognition.interimResults = true;
+                recognition.interimResults = false;
 
                 let isListening = false;
 
                 recognition.onresult = (event) => {
-                    let heard = '';
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                        heard += event.results[i][0].transcript + ' ';
+                    const last = event.results[event.results.length - 1];
+                    if (last.isFinal) {
+                        checkAdvance(normalizeArabic(last[0].transcript));
                     }
-                    checkAdvance(normalizeArabic(heard));
                 };
 
                 recognition.onerror = (e) => { console.log('Speech error:', e.error); };
