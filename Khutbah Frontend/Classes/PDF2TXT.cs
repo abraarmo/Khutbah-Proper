@@ -36,6 +36,20 @@ namespace Khutbah_Frontend
 
             string allText = operation.Value.Content;
 
+            allText = allText.Replace("\u064b", "");
+            allText = allText.Replace("\u064f", "");
+            allText = allText.Replace("\u064c", "");
+            allText = allText.Replace("\u0652", "");
+            allText = allText.Replace("\u064d", "");
+            allText = allText.Replace("\u0650", "");
+            allText = allText.Replace("\u0651", "");
+            allText = allText.Replace("\u064e", "");
+            allText = allText.Replace("SHORT FIRST KHUTBAH", "");
+            allText = allText.Replace("SHORT SECOND KHUTBAH", "");
+            allText = allText.Replace("Page 6 of 7", "");
+            allText = allText.Replace("Page 7 of 7", "");
+
+
             System.Diagnostics.Debug.WriteLine($"Generating the text: {sw.ElapsedMilliseconds} ms");
             // Debug only: dump the raw Arabic in txt file so extraction issues can be told
             // apart from translation issues.

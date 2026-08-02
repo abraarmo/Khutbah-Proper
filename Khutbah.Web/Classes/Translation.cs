@@ -8,23 +8,23 @@ namespace Khutbah.Web.Services.Classes
 {
     public class Translation
     {
-        public static List<string> SplitIntoSentences(string text)
+        public static List<string> SplitintoSentences(string text)
         {
-            // STAGE 1: strip junk lines (headers, page numbers) first
+            // STAGE 1: remove header/footer lines (anything with Latin letters) BEFORE splitting
             var cleanedLines = text
                 .Split('\n')
-                .Where(line => !Regex.IsMatch(line, "[a-zA-Z]"))   // drop lines with Latin letters
+                .Where(line => !Regex.IsMatch(line, "[a-zA-Z]"))
                 .ToList();
             string cleaned = string.Join(" ", cleanedLines);
 
-            // STAGE 2: now split the cleaned Arabic on sentence boundaries
+            // STAGE 2: split the cleaned Arabic into sentences
             return cleaned
-                .Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries)
+                .Split(new[] { '.', '!', '?', '،' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(s => s.Trim())
                 .Where(s => !string.IsNullOrWhiteSpace(s))
                 .ToList();
         }
-        public static async Task<List<SentencePair>> TranslateTextRequest(string inputText)
+        public static async Task<string> TranslateTextRequest(string inputText)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var config = new ConfigurationBuilder()
@@ -41,22 +41,10 @@ namespace Khutbah.Web.Services.Classes
             string systemPrompt =
                 """
                     You are an expert translator of classical and Qur'anic Arabic into English.
-
-                    The input is a Friday khutbah (sermon), extracted by OCR, with full diacritics.
-
-                    Split the Arabic into natural sentences and translate each one. Return ONLY a JSON array, one object per sentence:
-
-                    [
-                      { "ar": "<the Arabic sentence>", "en": "<its English translation>" }
-                    ]
-
-                    Rules:
-                    - Every Arabic sentence must have exactly one matching English translation.
-                    - Preserve the Arabic exactly as given, including diacritics. Do not correct or normalise it.
+                    Translate the following sentence faithfully.
                     - Preserve Islamic terminology (taqwa, shirk, dua) rather than flattening it.
                     - Render Qur'anic verses and hadith in a dignified register appropriate to scripture.
-                    - Ignore page numbers, headers, and footers. Do not include them.
-                    - Output no commentary, no markdown, no code fences — only the raw JSON array.
+                    Output only the English translation. No commentary, no JSON, no quotes.
                 """;
 
             var body = new
@@ -88,11 +76,34 @@ namespace Khutbah.Web.Services.Classes
 
                 var parsed = JsonConvert.DeserializeObject<Khutbah.Web.Services.DTO.OpenAiResponse>(result)!;
                 string translatedText = parsed.Choices[0].Message.Content;
-                List<SentencePair> sentencePairs = JsonConvert.DeserializeObject<List<SentencePair>>(translatedText)!;
 
                 System.Diagnostics.Debug.WriteLine($"OpenAI has just deserialized: {sw.ElapsedMilliseconds} ms");
-                return sentencePairs;
+                return translatedText;
             }
+        }
+
+        // ORCHESTRATOR: split -> translate every sentence in parallel -> build pairs by index
+        public static async Task<List<SentencePair>> TranslateAll(string rawArabic)
+        {
+            List<string> sentences = SplitintoSentences(rawArabic);
+
+            var tasks = new List<Task<string>>();
+            foreach (var sentence in sentences)
+                tasks.Add(TranslateTextRequest(sentence));
+
+            string[] english = await Task.WhenAll(tasks);
+
+            var pairs = new List<SentencePair>();
+            for (int i = 0; i < sentences.Count; i++)
+            {
+                pairs.Add(new SentencePair
+                {
+                    AR = sentences[i],
+                    EN = english[i]
+                });
+            }
+
+            return pairs;
         }
     }
 }

@@ -17,12 +17,14 @@ namespace Khutbah.Web.Pages
             var pdf2txt = new PDF2TXT();
             string arabic = await pdf2txt.Convert(testPdf);
 
-            List<SentencePair> pairs = await Translation.TranslateTextRequest(arabic);
+            var testSentences = Translation.SplitintoSentences(arabic);
+            System.Diagnostics.Debug.WriteLine($"=== {testSentences.Count} sentences ===");
+            foreach (var s in testSentences)
+                System.Diagnostics.Debug.WriteLine($"[{s}]");
+
+            List<SentencePair> pairs = await Translation.TranslateAll(arabic);
             Sentences = pairs.Select(p => p.EN).ToList();
             Pairs = pairs;
-            var test = Translation.SplitIntoSentences(arabic);
-            foreach (var s in test)
-                System.Diagnostics.Debug.WriteLine($"[{s}]");
         }
     }
 }
